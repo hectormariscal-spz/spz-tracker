@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spazious · Feature Tracker</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --surface: #fff; --border: #e3e3e0; --border-light: #f0f0ee;
+    --text-primary: #1a1a1a; --text-secondary: #6b6b6b; --text-muted: #9b9b9b;
+    --accent: #2d6ef6;
+    --s-noinfo-bg:#f4f4f4; --s-noinfo:#9b9b9b;
+    --s-check-bg:#dafbe1;  --s-check:#2da44e;
+    --s-progress-bg:#fff8c5; --s-progress:#bf8700;
+    --s-nouse-bg:#ffebe9;  --s-nouse:#cf222e;
+    --p-critical-bg:#ffebe9; --p-critical:#cf222e;
+    --p-media-bg:#fff8c5;  --p-media:#bf8700;
+    --p-baja-bg:#dafbe1;   --p-baja:#2da44e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;display:flex;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
+  .sidebar-logo .logo{font-size:14px;font-weight:700;letter-spacing:-0.3px;}
+  .sidebar-logo .logo span{color:var(--accent);}
+  .sidebar-logo .sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .sidebar-section{padding:10px 10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-muted);}
+  .client-btn{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;margin:1px 6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-secondary);border:none;background:transparent;width:calc(100% - 12px);text-align:left;transition:background 0.15s,color 0.15s;}
+  .client-btn:hover{background:var(--bg);color:var(--text-primary);}
+  .client-btn.active{background:var(--accent-light,#eef2ff);color:var(--accent);font-weight:600;}
+  .client-btn .avatar{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:#fff;}
+  .client-btn .badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;background:var(--s-check-bg);color:var(--s-check);}
+  .sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);}
+
+  /* MAIN */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;}
+
+  /* TOP BAR */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;}
+  .topbar-client{font-size:16px;font-weight:700;flex:1;}
+  .topbar-client span{color:var(--text-muted);font-weight:400;font-size:13px;margin-left:8px;}
+  .input-wrap{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 10px;}
+  .input-wrap label{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;}
+  .input-wrap input{border:none;background:transparent;font-size:13px;font-weight:600;color:var(--text-primary);outline:none;width:120px;}
+
+  /* SYNC BAR */
+  .sync-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 24px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-muted);}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:#ccc;flex-shrink:0;transition:background 0.3s;}
+  .sync-dot.ok{background:#2da44e;}
+  .sync-dot.saving{background:#bf8700;animation:pulse 1s infinite;}
+  .sync-dot.error{background:#cf222e;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  /* STATS */
+  .stats-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;gap:16px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap;}
+  .stat-pill{display:flex;align-items:center;gap:5px;}
+  .stat-dot{width:7px;height:7px;border-radius:50%;}
+
+  /* NO CLIENT */
+  .no-client{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-muted);font-size:14px;padding:60px;}
+  .no-client-icon{font-size:40px;}
+
+  /* CONTENT */
+  .container{padding:24px 20px;max-width:1000px;width:100%;}
+
+  /* MODULES */
+  .module{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+  .module-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border-light);transition:background 0.15s;}
+  .module-header:hover{background:var(--bg);}
+  .module-title{font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;flex:1;}
+  .module-stats{font-size:10px;color:var(--text-muted);display:flex;gap:8px;}
+  .toggle-icon{font-size:10px;color:var(--text-muted);transition:transform 0.2s;}
+  .module.collapsed .toggle-icon{transform:rotate(-90deg);}
+  .module.collapsed .module-body{display:none;}
+
+  /* TABLE */
+  .feat-table{width:100%;border-collapse:collapse;}
+  .feat-table thead tr{background:#fafafa;}
+  .feat-table th{padding:6px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border);}
+  .feat-row{border-bottom:1px solid var(--border-light);transition:background 0.1s;}
+  .feat-row:last-child{border-bottom:none;}
+  .feat-row:hover{background:#fafafa;}
+  .feat-table td{padding:7px 12px;font-size:13px;vertical-align:middle;}
+  .feat-name{font-weight:500;}
+
+  /* SELECTS */
+  .sel-status,.sel-priority{border:none;border-radius:5px;padding:3px 18px 3px 7px;font-size:11px;font-weight:600;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;transition:box-shadow 0.15s;}
+  .sel-status:focus,.sel-priority:focus{box-shadow:0 0 0 2px var(--accent);}
+  .sel-status.s-noinfo{background-color:var(--s-noinfo-bg);color:var(--s-noinfo);}
+  .sel-status.s-check{background-color:var(--s-check-bg);color:var(--s-check);}
+  .sel-status.s-progress{background-color:var(--s-progress-bg);color:var(--s-progress);}
+  .sel-status.s-nouse{background-color:var(--s-nouse-bg);color:var(--s-nouse);}
+  .sel-priority.p-none{background-color:#f4f4f4;color:#9b9b9b;}
+  .sel-priority.p-critical{background-color:var(--p-critical-bg);color:var(--p-critical);}
+  .sel-priority.p-media{background-color:var(--p-media-bg);color:var(--p-media);}
+  .sel-priority.p-baja{background-color:var(--p-baja-bg);color:var(--p-baja);}
+
+  /* NOTES */
+  .note-input{width:100%;border:1px solid transparent;border-radius:5px;padding:3px 7px;font-size:12px;color:var(--text-secondary);background:transparent;resize:none;font-family:inherit;outline:none;transition:border-color 0.15s,background 0.15s;min-height:26px;overflow:hidden;}
+  .note-input::placeholder{color:var(--text-muted);font-style:italic;}
+  .note-input:focus{border-color:var(--border);background:var(--bg);}
+
+  /* ACTIONS */
+  .actions-bar{padding:12px 20px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);background:var(--surface);position:sticky;bottom:0;}
+  .btn{padding:6px 13px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all 0.15s;}
+  .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn-primary:hover{background:#1a5ce0;}
+  .btn-secondary{background:var(--surface);color:var(--text-secondary);border-color:var(--border);}
+  .btn-secondary:hover{background:var(--bg);}
+
+  /* OVERLAY */
+  .overlay{position:fixed;inset:0;background:rgba(247,247,245,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;font-size:14px;color:var(--text-secondary);}
+  .spinner{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .overlay.hidden{display:none;}
+
+  @media print{.sidebar,.actions-bar,.sync-bar{display:none;}.main{width:100%;}}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <span id="overlayMsg">Cargando datos compartidos…</span>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo">Spazious <span>·</span> Tracker</div>
+    <div class="sub">Feature adoption</div>
+  </div>
+  <div class="sidebar-section">Cadenas hoteleras</div>
+  <div id="clientList"></div>
+  <div class="sidebar-footer" id="syncFooter">—</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-client" id="topbarClient">Selecciona un cliente</div>
+    <div class="input-wrap">
+      <label>Fecha revisión</label>
+      <input type="date" id="reviewDate" onchange="scheduleAutoSave()" />
+    </div>
+    <button class="btn btn-secondary" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-primary" onclick="saveNow()">💾 Guardar</button>
+  </div>
+
+  <div class="sync-bar">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncMsg">Conectando…</span>
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <span class="stat-pill"><span class="stat-dot" style="background:var(--s-check)"></span>Check: <strong id="cnt-check">—</strong></span>
+    <span class="stat-pill"><span class="stat-dot" style="background:var(--s-progress)"></span>En progreso: <strong id="cnt-progress">—</strong></span>
+    <span class="stat-pill"><span class="stat-dot" style="background:var(--s-nouse)"></span>No usan: <strong id="cnt-nouse">—</strong></span>
+    <span class="stat-pill"><span class="stat-dot" style="background:var(--s-noinfo)"></span>Sin info: <strong id="cnt-noinfo">—</strong></span>
+    <span style="margin-left:auto;color:var(--text-muted)">Total: <strong id="cnt-total">92</strong></span>
+  </div>
+
+  <div id="mainContent">
+    <div class="no-client">
+      <div class="no-client-icon">🏨</div>
+      <div>Selecciona una cadena hotelera en el panel izquierdo</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3uMX-rsF5fZCwh50xeUH3jWzU6Q5r3nEpTBlQfkm6X5uBPYy1kMhK7OAH8_jHHKU1Cw/exec';
+
+const CLIENTS = [
+  { id: 'ennismore',      name: 'Ennismore',              color: '#1a1a2e' },
+  { id: 'concepts',       name: 'The Concepts Hotels',    color: '#e63946' },
+  { id: 'landmar',        name: 'Landmar',                color: '#6b4f12' },
+  { id: 'port_hotels',    name: 'Port Hotels',            color: '#1d3557' },
+  { id: 'oasis',          name: 'Oasis Hotels & Resorts', color: '#2a9d8f' },
+  { id: 'aubamar',        name: 'Aubamar',                color: '#e76f51' },
+  { id: 'raqueta',        name: 'Ciudad de la Raqueta',   color: '#457b9d' },
+  { id: 'petit_palace',   name: 'Petit Palace',           color: '#6a0572' },
+  { id: 'phg_emea',       name: 'PHG EMEA',               color: '#f4a261' },
+  { id: 'phg_latam',      name: 'PHG LATAM',              color: '#e9c46a' },
+  { id: 'vidanta',        name: 'Vidanta',                color: '#264653' },
+  { id: 'finca_negralejo',name: 'Finca del Negralejo',    color: '#606c38' },
+];
+
+const DATA = [
+  { module:"REPORTING", rows:[
+    {id:"r1",label:"Orders",level:0},{id:"r2",label:"Leads",level:0},{id:"r3",label:"Budgets",level:0}
+  ]},
+  { module:"CALENDARIOS", rows:[
+    {id:"c1",label:"Order",level:0},{id:"c2",label:"Rooms",level:0},{id:"c3",label:"Activities",level:0}
+  ]},
+  { module:"ORDERS", rows:[
+    {id:"o1",label:"List",level:0},{id:"o2",label:"Eproposal",level:1},{id:"o3",label:"Send Email",level:1},
+    {id:"o4",label:"ORDER",level:1},{id:"o5",label:"Crear pagos",level:2},{id:"o6",label:"Documents",level:2},
+    {id:"o7",label:"Proposal – Personalizada",level:3},{id:"o8",label:"Proposal – Uso",level:3},
+    {id:"o9",label:"Proforma – Personalizada",level:3},{id:"o10",label:"Proforma – Uso",level:3},
+    {id:"o11",label:"Contrato – Personalizada",level:3},{id:"o12",label:"Contrato – Uso",level:3},
+    {id:"o13",label:"BEO – Uso",level:3},{id:"o14",label:"Gestor de documentos – Uso",level:3},
+    {id:"o15",label:"Crear tareas",level:2},{id:"o16",label:"History",level:2},
+    {id:"o17",label:"Rooming List",level:2},{id:"o18",label:"Crear",level:3},
+    {id:"o19",label:"Editar",level:3},{id:"o20",label:"Descargar / Importar",level:3},
+    {id:"o21",label:"Enviar eRooming",level:3},{id:"o22",label:"Integración",level:2},
+    {id:"o23",label:"Leads",level:0},{id:"o24",label:"Pipeline",level:0},{id:"o25",label:"Tareas",level:0}
+  ]},
+  { module:"CRM", rows:[
+    {id:"crm1",label:"Accounts",level:0},{id:"crm2",label:"Comisiones añadidas",level:1},
+    {id:"crm3",label:"Información detallada",level:1},{id:"crm4",label:"Commercial Actions",level:1},
+    {id:"crm5",label:"Contacts",level:0},{id:"crm6",label:"Información detallada (Contacts)",level:1},
+    {id:"crm7",label:"Integración CRM",level:0}
+  ]},
+  { module:"FINANCE", rows:[
+    {id:"f1",label:"Cargar / Crear depósitos",level:0},
+    {id:"f2",label:"Actualizar depósitos (confirmados / devolución / cancelar)",level:0},
+    {id:"f3",label:"Pago desde SPZ",level:0},{id:"f4",label:"Integración",level:0}
+  ]},
+  { module:"TASAS", rows:[
+    {id:"t1",label:"Crear / Actualizar tasas por cadena",level:0},{id:"t2",label:"Añadir por servicio",level:0}
+  ]},
+  { module:"CONTENT · Meeting Rooms", rows:[
+    {id:"mr1",label:"Rates",level:0},{id:"mr2",label:"Reglas de negocio",level:1},
+    {id:"mr3",label:"Precios cargados",level:1},{id:"mr4",label:"Capacity Chart",level:0},
+    {id:"mr5",label:"Break Outs",level:0},{id:"mr6",label:"Booking Configuration",level:0},
+    {id:"mr7",label:"Idiomas",level:0},{id:"mr8",label:"Segmentación",level:0},
+    {id:"mr9",label:"Integración con PMS",level:0},{id:"mr10",label:"Tasas",level:0}
+  ]},
+  { module:"CONTENT · Rooms", rows:[
+    {id:"rm1",label:"Ocupación",level:0},{id:"rm2",label:"Segmentación",level:0},
+    {id:"rm3",label:"Cupos y min noches",level:0},{id:"rm4",label:"Rates",level:0},
+    {id:"rm5",label:"Integración con PMS",level:0},{id:"rm6",label:"Idiomas",level:0}
+  ]},
+  { module:"CONTENT · Servicios F&B", rows:[
+    {id:"fb1",label:"Cargar servicios",level:0},{id:"fb2",label:"Precios",level:0},
+    {id:"fb3",label:"Segmentación",level:0},{id:"fb4",label:"Idiomas",level:0}
+  ]},
+  { module:"CONTENT · Servicios Audiovisuales", rows:[
+    {id:"av1",label:"Cargar servicios",level:0},{id:"av2",label:"Precios",level:0},
+    {id:"av3",label:"Segmentación",level:0},{id:"av4",label:"Idiomas",level:0}
+  ]},
+  { module:"CONTENT · Servicios Extra", rows:[
+    {id:"ex1",label:"Cargar servicios",level:0},{id:"ex2",label:"Precios",level:0},
+    {id:"ex3",label:"Segmentación",level:0},{id:"ex4",label:"Idiomas",level:0}
+  ]},
+  { module:"CONTENT · Paquetes", rows:[
+    {id:"pk1",label:"Creados",level:0},{id:"pk2",label:"Asociar Meeting Rooms",level:0},
+    {id:"pk3",label:"Asociar F&B",level:0}
+  ]},
+  { module:"MANAGEMENT", rows:[
+    {id:"mg1",label:"Users",level:0},{id:"mg2",label:"Permisos",level:1},
+    {id:"mg3",label:"Segmentación",level:0},{id:"mg4",label:"Choices",level:0},
+    {id:"mg5",label:"Subsegmentación",level:1},{id:"mg6",label:"Channel",level:1},
+    {id:"mg7",label:"Sources",level:1},{id:"mg8",label:"Industry Types",level:1},
+    {id:"mg9",label:"Cancel Reasons",level:1},{id:"mg10",label:"Task Types",level:1},
+    {id:"mg11",label:"Commercial Actions",level:1}
+  ]},
+  { module:"INTEGRACIONES", rows:[
+    {id:"int1",label:"PMS",level:0},{id:"int2",label:"Mail",level:0}
+  ]},
+  { module:"BOOKING", rows:[
+    {id:"bk1",label:"Activo",level:0},{id:"bk2",label:"Web",level:0},
+    {id:"bk3",label:"Precios actualizados",level:0},{id:"bk4",label:"Seguimiento de Orders",level:0}
+  ]},
+];
+
+// ── STATE ─────────────────────────────────────────────────
+let allData = {};       // full sheet cache { "clientid::rowid": jsonStr, ... }
+let clientStates = {};  // per-client state cache { clientId: { rowId: {status,priority,note} } }
+let currentClientId = null;
+let autoSaveTimer = null;
+let isSaving = false;
+
+// ── SIDEBAR ───────────────────────────────────────────────
+function initSidebar() {
+  const list = document.getElementById('clientList');
+  list.innerHTML = CLIENTS.map(c => `
+    <button class="client-btn" id="btn-${c.id}" onclick="selectClient('${c.id}')">
+      <span class="avatar" style="background:${c.color}">${c.name.charAt(0)}</span>
+      ${c.name}
+    </button>`).join('');
+}
+
+function selectClient(id) {
+  if (id === currentClientId) return;
+  clearTimeout(autoSaveTimer);
+  currentClientId = id;
+  const client = CLIENTS.find(c => c.id === id);
+
+  // Update sidebar active state
+  document.querySelectorAll('.client-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + id).classList.add('active');
+
+  // Update topbar
+  document.getElementById('topbarClient').innerHTML =
+    `${client.name} <span>· Feature Tracker</span>`;
+
+  // Load date for this client
+  const dateKey = id + '::__date';
+  document.getElementById('reviewDate').value = allData[dateKey] || new Date().toISOString().slice(0,10);
+
+  // Load state
+  if (!clientStates[id]) {
+    clientStates[id] = {};
+    Object.entries(allData).forEach(([k, v]) => {
+      if (k.startsWith(id + '::')) {
+        const rowId = k.slice(id.length + 2);
+        if (rowId === '__date') return;
+        try { clientStates[id][rowId] = JSON.parse(v); } catch(e) {}
+      }
+    });
+  }
+
+  renderContent();
+  updateStats();
+  setSyncStatus('ok', `${client.name} cargado · ${nowStr()}`);
+}
+
+// ── SYNC ──────────────────────────────────────────────────
+function setSyncStatus(status, msg) {
+  document.getElementById('syncDot').className = 'sync-dot ' + status;
+  document.getElementById('syncMsg').textContent = msg;
+  document.getElementById('syncFooter').textContent = msg;
+}
+
+async function loadFromSheets() {
+  try {
+    const res = await fetch(SCRIPT_URL);
+    allData = await res.json();
+    setSyncStatus('ok', 'Conectado · ' + nowStr());
+    updateSidebarBadges();
+  } catch(e) {
+    setSyncStatus('error', 'Error de conexión');
+  }
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+function updateSidebarBadges() {
+  CLIENTS.forEach(c => {
+    const checks = Object.entries(allData).filter(([k,v]) => {
+      if (!k.startsWith(c.id + '::')) return false;
+      try { return JSON.parse(v).status === 'check'; } catch(e) { return false; }
+    }).length;
+    const btn = document.getElementById('btn-' + c.id);
+    const existing = btn.querySelector('.badge');
+    if (existing) existing.remove();
+    if (checks > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = checks + ' ✓';
+      btn.appendChild(badge);
+    }
+  });
+}
+
+async function saveToSheets() {
+  if (isSaving || !currentClientId) return;
+  isSaving = true;
+  setSyncStatus('saving', 'Guardando…');
+  try {
+    const payload = {};
+    payload[currentClientId + '::__date'] = document.getElementById('reviewDate').value;
+    const st = clientStates[currentClientId] || {};
+    Object.entries(st).forEach(([k,v]) => {
+      payload[currentClientId + '::' + k] = JSON.stringify(v);
+    });
+    Object.assign(allData, payload);
+    await fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify(payload),
+      headers:{'Content-Type':'application/json'}
+    });
+    const client = CLIENTS.find(c => c.id === currentClientId);
+    setSyncStatus('ok', `Guardado [${client.name}] · ${nowStr()}`);
+    updateSidebarBadges();
+  } catch(e) {
+    setSyncStatus('error', 'Error al guardar');
+  }
+  isSaving = false;
+}
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveToSheets, 1500);
+}
+function saveNow() { clearTimeout(autoSaveTimer); saveToSheets(); }
+function nowStr() { return new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}); }
+
+// ── RENDER ────────────────────────────────────────────────
+function indentPad(lvl) { return [14,32,50,68][Math.min(lvl,3)]; }
+
+function buildRow(row) {
+  const st = (clientStates[currentClientId] || {})[row.id] || {status:'noinfo',priority:'none',note:''};
+  const prefix = ['','→ ','↳ ','· '][Math.min(row.level,3)];
+  const nameStyle = row.level > 0 ? `color:var(--text-${row.level>1?'muted':'secondary'});font-weight:400;` : '';
+  return `<tr class="feat-row">
+    <td style="padding-left:${indentPad(row.level)}px"><span class="feat-name" style="${nameStyle}">${prefix}${row.label}</span></td>
+    <td><select class="sel-status s-${st.status}" onchange="updateField('${row.id}','status',this.value,this)">
+      <option value="noinfo" ${st.status==='noinfo'?'selected':''}>🔘 Sin info</option>
+      <option value="check" ${st.status==='check'?'selected':''}>✅ Check</option>
+      <option value="progress" ${st.status==='progress'?'selected':''}>🔄 En progreso</option>
+      <option value="nouse" ${st.status==='nouse'?'selected':''}>❌ No usan</option>
+    </select></td>
+    <td><select class="sel-priority p-${st.priority}" onchange="updateField('${row.id}','priority',this.value,this)">
+      <option value="none" ${st.priority==='none'?'selected':''}>— Sin definir</option>
+      <option value="critical" ${st.priority==='critical'?'selected':''}>🔴 Crítico</option>
+      <option value="media" ${st.priority==='media'?'selected':''}>🟡 Media</option>
+      <option value="baja" ${st.priority==='baja'?'selected':''}>🟢 Baja</option>
+    </select></td>
+    <td><textarea class="note-input" rows="1" placeholder="Notas…"
+      onchange="updateField('${row.id}','note',this.value,this)"
+      oninput="autoResize(this)"
+    >${st.note||''}</textarea></td>
+  </tr>`;
+}
+
+function renderContent() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="container">
+      ${DATA.map((mod,mi) => `
+        <div class="module" id="mod-${mi}">
+          <div class="module-header" onclick="toggleModule(${mi})">
+            <span class="module-title">${mod.module}</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="module-body">
+            <table class="feat-table">
+              <thead><tr>
+                <th style="width:42%">Funcionalidad</th>
+                <th style="width:15%">Estado</th>
+                <th style="width:15%">Prioridad</th>
+                <th>Notas</th>
+              </tr></thead>
+              <tbody>${mod.rows.map(buildRow).join('')}</tbody>
+            </table>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="actions-bar">
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="btn btn-secondary" onclick="window.print()">🖨 Imprimir</button>
+      <button class="btn btn-primary" onclick="saveNow()">💾 Guardar ahora</button>
+    </div>`;
+}
+
+function toggleModule(idx) { document.getElementById(`mod-${idx}`).classList.toggle('collapsed'); }
+
+function updateField(id, field, value, el) {
+  if (!clientStates[currentClientId]) clientStates[currentClientId] = {};
+  if (!clientStates[currentClientId][id]) clientStates[currentClientId][id] = {status:'noinfo',priority:'none',note:''};
+  clientStates[currentClientId][id][field] = value;
+  if (field==='status')   el.className = `sel-status s-${value}`;
+  if (field==='priority') el.className = `sel-priority p-${value}`;
+  updateStats();
+  scheduleAutoSave();
+}
+
+function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+
+function updateStats() {
+  if (!currentClientId) return;
+  const all = DATA.flatMap(m => m.rows);
+  const st = clientStates[currentClientId] || {};
+  const counts = {check:0,progress:0,nouse:0,noinfo:0};
+  all.forEach(r => { const s=(st[r.id]||{}).status||'noinfo'; counts[s]=(counts[s]||0)+1; });
+  document.getElementById('cnt-total').textContent = all.length;
+  document.getElementById('cnt-check').textContent = counts.check;
+  document.getElementById('cnt-progress').textContent = counts.progress;
+  document.getElementById('cnt-nouse').textContent = counts.nouse;
+  document.getElementById('cnt-noinfo').textContent = counts.noinfo;
+}
+
+function exportCSV() {
+  if (!currentClientId) return;
+  const client = CLIENTS.find(c => c.id === currentClientId);
+  const date = document.getElementById('reviewDate').value || new Date().toISOString().slice(0,10);
+  const rows = [['Cliente','Módulo','Funcionalidad','Nivel','Estado','Prioridad','Notas']];
+  const st = clientStates[currentClientId] || {};
+  DATA.forEach(mod => mod.rows.forEach(r => {
+    const s = st[r.id] || {};
+    rows.push([client.name, mod.module, r.label, r.level, s.status||'noinfo', s.priority||'none', (s.note||'').replace(/\n/g,' ')]);
+  }));
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SPZ_${client.name}_${date}.csv`});
+  a.click();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+initSidebar();
+document.getElementById('reviewDate').value = new Date().toISOString().slice(0,10);
+loadFromSheets();
+</script>
+</body>
+</html>
