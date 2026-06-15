@@ -320,11 +320,33 @@ async function saveToSheets() {
   try {
     const payload = { __client: document.getElementById('clientName').value, __date: document.getElementById('reviewDate').value };
     Object.entries(state).forEach(([k, v]) => { payload[k] = JSON.stringify(v); });
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const res = await fetch(SCRIPT_URL, {
+
+  method: 'POST',
+
+  body: JSON.stringify(payload),
+
+  headers: {
+
+    'Content-Type': 'text/plain;charset=utf-8'
+
+  }
+
+});
+
+if (!res.ok) {
+
+  throw new Error('HTTP ' + res.status);
+
+}
+
+const result = await res.json();
+
+if (!result.ok) {
+
+  throw new Error(result.error || 'Error desconocido');
+
+}
     setSyncStatus('ok', 'Guardado · ' + nowStr());
   } catch(e) {
     setSyncStatus('error', 'Error al guardar. Reintentando…');
